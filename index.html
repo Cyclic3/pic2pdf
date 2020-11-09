@@ -1,0 +1,63 @@
+<html>
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.1.1/jspdf.umd.min.js"></script>
+    <script>
+      // source: https://stackoverflow.com/a/34495914
+      function readAsDataURL(file) {
+        return new Promise((resolve, reject) => {
+          const fr = new FileReader();
+          fr.onerror = reject;
+          fr.onload = function() {
+            resolve(fr.result);
+          }
+          fr.readAsDataURL(file);
+        });
+      }
+
+      var margin = 10;
+
+      async function create_pdf() {
+        const files = document.getElementById('files').files;
+
+        var doc = new jspdf.jsPDF();
+        const max_x = doc.internal.pageSize.getWidth() - 2*margin;
+        const max_y = doc.internal.pageSize.getHeight() - 2*margin;
+
+        var is_begin = true;
+
+        for (const image of files) {
+          image_url = await readAsDataURL(image);
+          const image_props = doc.getImageProperties(image_url);
+
+          const scale_x = max_x / image_props.width;
+          const scale_y = max_y / image_props.height;
+
+          var new_x = 0;
+          var new_y = 0;
+
+          if (scale_x < scale_y)
+            new_x = max_x;
+          else
+            new_y = max_y;
+          if (!is_begin)
+            doc.addPage();
+          else
+            is_begin = false;
+          doc.addImage(image_url, margin, margin, new_x, new_y);
+        }
+        url = doc.output("bloburl", "JPEG");
+        console.log("done");
+        window.location = url;
+      }
+    </script>
+  </head>
+  <body>
+    <form>
+      Upload your images:
+      <br>
+      <input type="file" name="files" multiple="multiple" id="files"></input>
+      <br>
+      <input type="button" value="Create pdf!" onclick="create_pdf();"></input>
+    </form>
+  </body>
+</html>
