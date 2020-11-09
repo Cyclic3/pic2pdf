@@ -1,6 +1,12 @@
 <html>
   <head>
+    <!-- This is a well-known js library: https://github.com/MrRio/jsPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.1.1/jspdf.umd.min.js"></script>
+    <!-- These are for bootstrap, a well known css library -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
     <script>
       // source: https://stackoverflow.com/a/34495914
       function readAsDataURL(file) {
@@ -17,47 +23,67 @@
       var margin = 10;
 
       async function create_pdf() {
+        // Get the list of files
         const files = document.getElementById('files').files;
 
+        // Create the javascript object
         var doc = new jspdf.jsPDF();
+        // Precompute our boundary
         const max_x = doc.internal.pageSize.getWidth() - 2*margin;
         const max_y = doc.internal.pageSize.getHeight() - 2*margin;
 
         var is_begin = true;
 
         for (const image of files) {
+          // Load the image
           image_url = await readAsDataURL(image);
           const image_props = doc.getImageProperties(image_url);
 
+          // This is how much we would have to scale the image in each direction
+          // to fill the page in that dimension
           const scale_x = max_x / image_props.width;
           const scale_y = max_y / image_props.height;
 
+          // 0 means to scale evenly
           var new_x = 0;
           var new_y = 0;
 
+          // Work out which dimension is constrained more, and use that
           if (scale_x < scale_y)
             new_x = max_x;
           else
             new_y = max_y;
+          
+          // We start off with a single page, so this stops us having a blank one at the start
           if (!is_begin)
             doc.addPage();
           else
             is_begin = false;
+          
+          // Finally, add the image to the pdf
           doc.addImage(image_url, margin, margin, new_x, new_y);
         }
+        
+        // A bloburl is the fastest way of outputting this
         url = doc.output("bloburl", "JPEG");
-        console.log("done");
+        // Present the pdf to the user
         window.location = url;
       }
     </script>
+    <style>
+      label, input {
+        font-size: 60px !important;
+      }
+    </style>
   </head>
   <body>
     <form>
-      Upload your images:
+      <div class="custom-file" style="height:25%">
+        <label class="custom-file-label btn-primary" for="files" style="height:100%">Select pictures</span>
+        <input type="file" class="custom-file-input" name="files" multiple="multiple" id="files">
+      </div>
       <br>
-      <input type="file" name="files" multiple="multiple" id="files"></input>
-      <br>
-      <input type="button" value="Create pdf!" onclick="create_pdf();"></input>
+      <input class="btn btn-success" type="button" value="Create pdf!" onclick="create_pdf();" style="width:100%; height:25%">
     </form>
   </body>
 </html>
